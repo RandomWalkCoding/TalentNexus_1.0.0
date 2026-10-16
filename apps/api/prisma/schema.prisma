@@ -1,0 +1,765 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IntelligenceKind {
+  industry
+  company
+}
+
+enum IntelligenceImportance {
+  low
+  medium
+  high
+}
+
+enum MonitorSignalKind {
+  funding
+  hiring
+  other
+}
+
+model Source {
+  id             String             @id @default(uuid()) @db.Uuid
+  name           String             @unique @db.VarChar(160)
+  url            String?            @db.Text
+  intelligence   IntelligenceItem[]
+  monitorSignals MonitorSignal[]
+  evidences      Evidence[]
+  leaderEvidences LeaderEvidence[]
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("sources")
+}
+
+model Company {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String             @unique @db.VarChar(200)
+  industry          String             @db.VarChar(120)
+  region            String             @db.VarChar(160)
+  employeeCount     Int?               @map("employee_count")
+  intelligenceItems IntelligenceItem[]
+  competitorMonitor CompetitorMonitor?
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  organizationUnits OrganizationUnit[]
+  leaderProfiles    LeaderProfile[]
+  researchTasks     ResearchTask[]
+  searchProjects    SearchProject[]
+
+  @@map("companies")
+}
+
+model OrganizationUnit {
+  id          String             @id @default(uuid()) @db.Uuid
+  companyId   String             @map("company_id") @db.Uuid
+  parentId    String?            @map("parent_id") @db.Uuid
+  name        String             @db.VarChar(200)
+  kind        String             @db.VarChar(40)
+  region      String?            @db.VarChar(160)
+  role        String?            @db.VarChar(200)
+  status      String             @default("unverified") @db.VarChar(30)
+  version     Int                @default(1)
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent      OrganizationUnit?  @relation("OrganizationTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    OrganizationUnit[] @relation("OrganizationTree")
+  evidences   Evidence[]
+  leaders     LeaderProfile[]
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([companyId, parentId])
+  @@index([companyId, status, updatedAt(sort: Desc)])
+  @@map("organization_units")
+}
+
+model LeaderProfile {
+  id                 String             @id @default(uuid()) @db.Uuid
+  companyId          String             @map("company_id") @db.Uuid
+  organizationUnitId String?            @map("organization_unit_id") @db.Uuid
+  name               String             @db.VarChar(120)
+  currentTitle       String?            @map("current_title") @db.VarChar(200)
+  previousTitles     String[]           @default([]) @map("previous_titles")
+  regions            String[]           @default([])
+  teamSummary        String?            @map("team_summary") @db.Text
+  contactChannels    String[]           @default([]) @map("contact_channels")
+  status             String             @default("unverified") @db.VarChar(30)
+  version            Int                @default(1)
+  company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  organizationUnit   OrganizationUnit?  @relation(fields: [organizationUnitId], references: [id], onDelete: SetNull)
+  evidences          LeaderEvidence[]
+  researchTasks      ResearchTaskLeader[]
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([companyId, name])
+  @@index([organizationUnitId, status])
+  @@map("leader_profiles")
+}
+
+model LeaderEvidence {
+  id          String        @id @default(uuid()) @db.Uuid
+  leaderId    String        @map("leader_id") @db.Uuid
+  sourceId    String        @map("source_id") @db.Uuid
+  title       String        @db.VarChar(300)
+  excerpt     String        @db.Text
+  collectedAt DateTime      @map("collected_at") @db.Timestamptz(3)
+  confidence  Int           @default(50)
+  status      String        @default("pending") @db.VarChar(30)
+  leader      LeaderProfile @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  source      Source        @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([leaderId, status, collectedAt(sort: Desc)])
+  @@map("leader_evidences")
+}
+
+model Evidence {
+  id                 String            @id @default(uuid()) @db.Uuid
+  organizationUnitId String            @map("organization_unit_id") @db.Uuid
+  sourceId           String            @map("source_id") @db.Uuid
+  title              String            @db.VarChar(300)
+  excerpt            String            @db.Text
+  collectedAt        DateTime          @map("collected_at") @db.Timestamptz(3)
+  confidence         Int               @default(50)
+  status             String            @default("pending") @db.VarChar(30)
+  reviewNote         String?           @map("review_note") @db.Text
+  reviewedAt         DateTime?         @map("reviewed_at") @db.Timestamptz(3)
+  organizationUnit   OrganizationUnit  @relation(fields: [organizationUnitId], references: [id], onDelete: Cascade)
+  source             Source            @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([organizationUnitId, status, collectedAt(sort: Desc)])
+  @@index([sourceId, collectedAt(sort: Desc)])
+  @@map("organization_evidences")
+}
+
+model IntelligenceItem {
+  id          String                 @id @default(uuid()) @db.Uuid
+  title       String                 @db.VarChar(300)
+  summary     String                 @db.VarChar(1000)
+  content     String                 @db.Text
+  kind        IntelligenceKind
+  importance  IntelligenceImportance @default(medium)
+  tags        String[]               @default([])
+  publishedAt DateTime               @map("published_at") @db.Timestamptz(3)
+  sourceId    String                 @map("source_id") @db.Uuid
+  companyId   String?                @map("company_id") @db.Uuid
+  source      Source                 @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  company     Company?               @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  briefings   Briefing[]
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([publishedAt(sort: Desc)])
+  @@index([kind, publishedAt(sort: Desc)])
+  @@index([importance, publishedAt(sort: Desc)])
+  @@index([sourceId, publishedAt(sort: Desc)])
+  @@index([companyId, publishedAt(sort: Desc)])
+  @@map("intelligence_items")
+}
+
+model CompetitorMonitor {
+  id            String          @id @default(uuid()) @db.Uuid
+  companyId     String          @unique @map("company_id") @db.Uuid
+  monitored     Boolean         @default(true)
+  lastUpdatedAt DateTime        @default(now()) @map("last_updated_at") @db.Timestamptz(3)
+  company       Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  signals       MonitorSignal[]
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([monitored, lastUpdatedAt(sort: Desc)])
+  @@map("competitor_monitors")
+}
+
+model MonitorSignal {
+  id         String            @id @default(uuid()) @db.Uuid
+  monitorId  String            @map("monitor_id") @db.Uuid
+  sourceId   String            @map("source_id") @db.Uuid
+  kind       MonitorSignalKind
+  title      String            @db.VarChar(300)
+  summary    String            @db.VarChar(1000)
+  occurredAt DateTime          @map("occurred_at") @db.Timestamptz(3)
+  monitor    CompetitorMonitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  source     Source            @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([monitorId, occurredAt(sort: Desc)])
+  @@index([sourceId, occurredAt(sort: Desc)])
+  @@map("monitor_signals")
+}
+
+model Briefing {
+  id             String   @id @db.VarChar(80)
+  intelligenceId String   @map("intelligence_id") @db.Uuid
+  read           Boolean  @default(false)
+  confidence     Int      @default(80)
+  intelligence   IntelligenceItem @relation(fields: [intelligenceId], references: [id], onDelete: Cascade)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([read, updatedAt(sort: Desc)])
+  @@map("briefings")
+}
+
+model Lead {
+  id        String   @id @db.VarChar(80)
+  subject   String   @db.VarChar(300)
+  company   String   @db.VarChar(200)
+  source    String   @default("手动录入") @db.VarChar(120)
+  lastTouchedAt String? @map("last_touched_at") @db.VarChar(10)
+  stage     String   @db.VarChar(40)
+  owner     String   @db.VarChar(120)
+  score     Int
+  summary   String   @db.Text
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([stage, updatedAt(sort: Desc)])
+  @@map("leads")
+}
+
+model TalentCategory {
+  name      String   @id @db.VarChar(100)
+  owner     String   @default("未分配") @db.VarChar(120)
+  talents   Talent[]
+
+  @@map("talent_categories")
+}
+
+model Talent {
+  id        String   @id @db.VarChar(80)
+  name      String   @db.VarChar(120)
+  title     String   @db.VarChar(200)
+  company   String   @db.VarChar(200)
+  location  String   @db.VarChar(120)
+  category  String   @db.VarChar(100)
+  tags      String[] @default([])
+  level     String   @default("") @db.VarChar(100)
+  categoryRecord TalentCategory @relation(fields: [category], references: [name], onDelete: Restrict)
+  searchProjects CandidateProject[]
+  mailMessages MailMessage[]
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([category, updatedAt(sort: Desc)])
+  @@map("talents")
+}
+
+model ResearchTask {
+  id        String   @id @db.VarChar(80)
+  name      String   @db.VarChar(300)
+  status    String   @db.VarChar(40)
+  progress  Int
+  owner     String   @db.VarChar(120)
+  target    String   @db.VarChar(200)
+  summary   String   @db.Text
+  deadline  String?  @db.VarChar(10)
+  result    String   @default("") @db.Text
+  companyId String?  @map("company_id") @db.Uuid
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  leaders   ResearchTaskLeader[]
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([status, updatedAt(sort: Desc)])
+  @@map("research_tasks")
+}
+
+model ResearchTaskLeader {
+  researchTaskId String         @map("research_task_id") @db.VarChar(80)
+  leaderId       String         @map("leader_id") @db.Uuid
+  addedAt        DateTime       @default(now()) @map("added_at") @db.Timestamptz(3)
+  researchTask   ResearchTask   @relation(fields: [researchTaskId], references: [id], onDelete: Cascade)
+  leader         LeaderProfile  @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+
+  @@id([researchTaskId, leaderId])
+  @@index([leaderId])
+  @@map("research_task_leaders")
+}
+
+model SearchProject {
+  id          String             @id @default(uuid()) @db.Uuid
+  name        String             @db.VarChar(300)
+  companyId   String?            @map("company_id") @db.Uuid
+  targetRole  String             @map("target_role") @db.VarChar(120)
+  regions     String[]           @default([])
+  owner       String             @db.VarChar(120)
+  status      String             @default("draft") @db.VarChar(30)
+  targetCount Int                @default(0) @map("target_count")
+  deadline    String?            @db.VarChar(10)
+  summary     String             @db.Text
+  company     Company?           @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  candidates  CandidateProject[]
+  mailMessages MailMessage[]
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([companyId, status, updatedAt(sort: Desc)])
+  @@index([status, updatedAt(sort: Desc)])
+  @@map("search_projects")
+}
+
+model CandidateProject {
+  id           String        @id @default(uuid()) @db.Uuid
+  projectId    String        @map("project_id") @db.Uuid
+  talentId     String        @map("talent_id") @db.VarChar(80)
+  stage        String        @default("research") @db.VarChar(40)
+  source       String?       @db.VarChar(120)
+  nextActionAt DateTime?     @map("next_action_at") @db.Timestamptz(3)
+  feedback     String?       @db.Text
+  project      SearchProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  talent       Talent        @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  mailMessages MailMessage[]
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([projectId, talentId])
+  @@index([talentId, updatedAt(sort: Desc)])
+  @@index([projectId, stage, updatedAt(sort: Desc)])
+  @@map("candidate_projects")
+}
+
+model OutreachCampaign {
+  id        String   @id @db.VarChar(80)
+  name      String   @db.VarChar(300)
+  channel   String   @db.VarChar(40)
+  status    String   @db.VarChar(40)
+  targetCount Int    @default(0) @map("target_count")
+  touched   Int
+  replies   Int
+  summary   String   @db.Text
+  mailMessages MailMessage[]
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([status, updatedAt(sort: Desc)])
+  @@map("outreach_campaigns")
+}
+
+model MappingItem {
+  id         String   @id @db.VarChar(80)
+  source     String   @db.VarChar(300)
+  target     String   @db.VarChar(300)
+  type       String   @db.VarChar(40)
+  confidence Int
+  summary    String   @db.Text
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([type, updatedAt(sort: Desc)])
+  @@map("mapping_items")
+}
+
+model CompensationAssumption {
+  location        String   @id @db.VarChar(40)
+  label           String   @db.VarChar(80)
+  currency        String   @db.VarChar(8)
+  fxToCny         Decimal  @map("fx_to_cny") @db.Decimal(18, 8)
+  taxRate         Decimal  @map("tax_rate") @db.Decimal(8, 6)
+  mandatoryRate   Decimal  @map("mandatory_rate") @db.Decimal(8, 6)
+  employerRate    Decimal  @map("employer_rate") @db.Decimal(8, 6)
+  pppFactor       Decimal  @map("ppp_factor") @db.Decimal(8, 6)
+  effectiveFrom   String   @map("effective_from") @db.VarChar(10)
+  notes           String[] @default([])
+  version         String   @db.VarChar(80)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([version, effectiveFrom])
+  @@map("compensation_assumptions")
+}
+
+model CompensationSample {
+  id String @id @default(uuid()) @db.Uuid
+  company String @db.VarChar(120)
+  role String @db.VarChar(120)
+  location String @db.VarChar(40)
+  currency String @db.VarChar(8)
+  levelCode String @map("level_code") @db.VarChar(20)
+  series String @db.VarChar(8)
+  sampleDate String @map("sample_date") @db.VarChar(10)
+  source String @db.VarChar(200)
+  sourceUrl String @map("source_url") @db.Text
+  license String @db.VarChar(200)
+  base Decimal @db.Decimal(18, 2)
+  bonusTarget Decimal? @map("bonus_target") @db.Decimal(18, 2)
+  bonusActual Decimal? @map("bonus_actual") @db.Decimal(18, 2)
+  equity Decimal? @db.Decimal(18, 2)
+  allowances Decimal? @db.Decimal(18, 2)
+  statutoryBenefits Decimal? @map("statutory_benefits") @db.Decimal(18, 2)
+  extraBenefits Decimal? @map("extra_benefits") @db.Decimal(18, 2)
+  employerTaxes Decimal? @map("employer_taxes") @db.Decimal(18, 2)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  @@index([location, levelCode, role, sampleDate])
+  @@map("compensation_samples")
+}
+
+model LevelBenchmark {
+  id String @id @default(uuid()) @db.Uuid
+  company String @db.VarChar(120)
+  role String @db.VarChar(120)
+  location String @db.VarChar(40)
+  series String @db.VarChar(8)
+  externalLevel String @map("external_level") @db.VarChar(40)
+  candidateLevels String[] @map("candidate_levels")
+  confidence Int
+  evidenceUrl String? @map("evidence_url") @db.Text
+  rationale String @db.Text
+  status String @default("pending") @db.VarChar(20)
+  selectedLevel String? @map("selected_level") @db.VarChar(20)
+  version Int @default(1)
+  reviews LevelBenchmarkReview[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  @@index([company, location, series, status])
+  @@map("level_benchmarks")
+}
+
+model LevelBenchmarkReview {
+  id String @id @default(uuid()) @db.Uuid
+  benchmarkId String @map("benchmark_id") @db.Uuid
+  benchmark LevelBenchmark @relation(fields: [benchmarkId], references: [id], onDelete: Restrict)
+  version Int
+  status String @db.VarChar(20)
+  selectedLevel String? @map("selected_level") @db.VarChar(20)
+  note String @db.Text
+  actorId String @map("actor_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@unique([benchmarkId, version])
+  @@map("level_benchmark_reviews")
+}
+
+model BenchmarkSnapshot {
+  id String @id @default(uuid()) @db.Uuid
+  kind String @db.VarChar(40)
+  payload Json
+  actorId String @map("actor_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([kind, createdAt(sort: Desc)])
+  @@map("benchmark_snapshots")
+}
+
+model AdminUser {
+  id          String         @id @default(uuid()) @db.Uuid
+  name        String         @db.VarChar(120)
+  email       String         @unique @db.VarChar(240)
+  passwordHash String?       @map("password_hash") @db.VarChar(200)
+  role        String         @db.VarChar(20)
+  status      String         @default("active") @db.VarChar(20)
+  preference  UserPreference?
+  auditLogs   AuditLog[]
+  sessions    AuthSession[]
+  mailConnections MailConnection[]
+  notifications Notification[]
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([role, status])
+  @@index([updatedAt(sort: Desc), id])
+  @@map("admin_users")
+}
+
+model MailConnection {
+  id String @id @default(uuid()) @db.Uuid
+  ownerId String @db.Uuid
+  owner AdminUser @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  provider String @db.VarChar(20)
+  email String? @db.VarChar(254)
+  status String @default("connecting") @db.VarChar(30)
+  capabilities String[] @default([])
+  credentials String? @db.Text
+  expiresAt DateTime? @db.Timestamptz(3)
+  lastSyncedAt DateTime? @db.Timestamptz(3)
+  cursor String? @db.Text
+  errorCode String? @db.VarChar(40)
+  version Int @default(1)
+  lastDispatchAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  messages MailMessage[]
+  replies MailReply[]
+  syncJobs MailSyncJob[]
+  inbound MailInbound[]
+  @@index([ownerId, status])
+  @@map("mail_connections")
+}
+
+model MailOAuthState {
+  stateHash String @id @db.VarChar(64)
+  ownerId String @db.Uuid
+  sessionHash String @db.VarChar(64)
+  connectionId String @db.Uuid
+  connectionVersion Int
+  provider String @db.VarChar(20)
+  verifier String @db.Text
+  expiresAt DateTime @db.Timestamptz(3)
+  @@index([expiresAt])
+  @@map("mail_oauth_states")
+}
+
+model MailMessage {
+  id String @id @db.Uuid
+  connectionId String @db.Uuid
+  connection MailConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  ownerId String @db.Uuid
+  talentId String @db.VarChar(80)
+  talent Talent @relation(fields: [talentId], references: [id], onDelete: Restrict)
+  projectId String? @db.Uuid
+  project SearchProject? @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  candidateProjectId String? @db.Uuid
+  candidateProject CandidateProject? @relation(fields: [candidateProjectId], references: [id], onDelete: Restrict)
+  campaignId String? @db.VarChar(80)
+  campaign OutreachCampaign? @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  recipient String @db.VarChar(254)
+  status String @db.VarChar(30)
+  version Int
+  payload Json
+  sentAt DateTime? @db.Timestamptz(3)
+  nextAttemptAt DateTime? @db.Timestamptz(3)
+  scheduledAt DateTime? @db.Timestamptz(3)
+  leaseUntil DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  replies MailReply[]
+  feedback MailFeedback[]
+  @@index([ownerId, updatedAt(sort: Desc)])
+  @@index([status, nextAttemptAt])
+  @@index([scheduledAt])
+  @@index([recipient, sentAt])
+  @@index([talentId, sentAt])
+  @@map("mail_messages")
+}
+
+model MailReply {
+  id String @id @db.Uuid
+  messageId String @db.Uuid
+  message MailMessage @relation(fields: [messageId], references: [id], onDelete: Restrict)
+  connectionId String @db.Uuid
+  connection MailConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  providerId String @db.VarChar(500)
+  payload Json
+  receivedAt DateTime @db.Timestamptz(3)
+  @@unique([connectionId, providerId])
+  @@index([receivedAt(sort: Desc)])
+  @@map("mail_replies")
+}
+
+model MailInbound {
+  id String @id @default(uuid()) @db.Uuid
+  connectionId String @db.Uuid
+  connection MailConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  providerId String @db.VarChar(500)
+  payload Json
+  receivedAt DateTime @db.Timestamptz(3)
+  @@unique([connectionId, providerId])
+  @@map("mail_inbound")
+}
+
+model MailFeedback {
+  id String @id @default(uuid()) @db.Uuid
+  messageId String @db.Uuid
+  message MailMessage @relation(fields: [messageId], references: [id], onDelete: Restrict)
+  replyId String? @db.Uuid
+  kind String @db.VarChar(30)
+  source String @db.VarChar(20)
+  actorId String? @db.Uuid
+  note String? @db.Text
+  occurredAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([messageId, kind])
+  @@map("mail_feedback")
+}
+
+model MailSuppression {
+  id String @id @default(uuid()) @db.Uuid
+  email String @unique @db.VarChar(254)
+  talentId String? @db.VarChar(80)
+  reason String @db.VarChar(30)
+  sourceReplyId String? @db.Uuid
+  createdBy String? @db.Uuid
+  note String @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([talentId])
+  @@map("mail_suppressions")
+}
+
+model MailPreview {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @db.Uuid
+  payload Json
+  expiresAt DateTime @db.Timestamptz(3)
+  @@index([expiresAt])
+  @@map("mail_previews")
+}
+
+model MailOperation {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @db.Uuid
+  key String @db.VarChar(128)
+  operation String @db.VarChar(160)
+  digest String @db.VarChar(64)
+  result Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([actorId, key, operation])
+  @@map("mail_operations")
+}
+
+model MailSyncJob {
+  id String @id @default(uuid()) @db.Uuid
+  connectionId String @db.Uuid
+  connection MailConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  status String @default("queued") @db.VarChar(20)
+  importedCount Int @default(0)
+  unassociatedCount Int @default(0)
+  errorCode String? @db.VarChar(40)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  startedAt DateTime? @db.Timestamptz(3)
+  finishedAt DateTime? @db.Timestamptz(3)
+  leaseUntil DateTime? @db.Timestamptz(3)
+  @@index([status, createdAt])
+  @@map("mail_sync_jobs")
+}
+
+model MailAudit {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String? @db.Uuid
+  resourceId String @db.Uuid
+  action String @db.VarChar(80)
+  detail Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([resourceId, createdAt])
+  @@map("mail_audit")
+}
+
+model AuthSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(128)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user       AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  title     String    @db.VarChar(200)
+  body      String    @db.VarChar(500)
+  read      Boolean   @default(false)
+  href      String?   @db.VarChar(240)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model UserPreference {
+  userId          String    @id @map("user_id") @db.Uuid
+  theme           String    @default("dark") @db.VarChar(20)
+  density         String    @default("comfortable") @db.VarChar(20)
+  notifications   Boolean   @default(true)
+  defaultLocation String    @default("beijing") @map("default_location") @db.VarChar(40)
+  defaultCurrency String    @default("CNY") @map("default_currency") @db.VarChar(8)
+  user            AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("user_preferences")
+}
+
+model DictionaryItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  group     String   @db.VarChar(80)
+  code      String   @db.VarChar(80)
+  label     String   @db.VarChar(120)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([group, code])
+  @@index([group, enabled])
+  @@map("dictionary_items")
+}
+
+model AuditLog {
+  id         String    @id @default(uuid()) @db.Uuid
+  actorId    String    @map("actor_id") @db.Uuid
+  action     String    @db.VarChar(80)
+  resource   String    @db.VarChar(80)
+  resourceId String?   @map("resource_id") @db.VarChar(120)
+  requestId  String    @map("request_id") @db.VarChar(120)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  actor      AdminUser @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@index([resource, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model AiTaskRecord {
+  id          String   @id @default(uuid()) @db.Uuid
+  kind        String   @db.VarChar(60)
+  status      String   @db.VarChar(30)
+  inputRef    String   @map("input_ref") @db.VarChar(240)
+  model       String   @db.VarChar(120)
+  attempt     Int      @default(0)
+  maxAttempts Int      @map("max_attempts")
+  errorCode   String?  @map("error_code") @db.VarChar(40)
+  errorMessage String? @map("error_message") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  startedAt   DateTime? @map("started_at") @db.Timestamptz(3)
+  finishedAt  DateTime? @map("finished_at") @db.Timestamptz(3)
+  reviews     AiReviewRecord[]
+  @@index([status, createdAt(sort: Desc)])
+  @@map("ai_tasks")
+}
+
+model AiReviewRecord {
+  id          String   @id @default(uuid()) @db.Uuid
+  taskId      String   @map("task_id") @db.Uuid
+  entityType  String   @map("entity_type") @db.VarChar(40)
+  entityId    String   @map("entity_id") @db.VarChar(120)
+  status      String   @db.VarChar(20)
+  proposed    Json
+  evidenceIds String[] @map("evidence_ids")
+  reviewerId  String?  @map("reviewer_id") @db.Uuid
+  reviewNote  String?  @map("review_note") @db.Text
+  reviewedAt  DateTime? @map("reviewed_at") @db.Timestamptz(3)
+  version     Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  task        AiTaskRecord @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  @@index([status, createdAt(sort: Desc)])
+  @@map("ai_reviews")
+}
+
+model MacroSnapshotRecord {
+  id           String   @id @default(uuid()) @db.Uuid
+  metric       String   @db.VarChar(30)
+  source       String   @db.VarChar(160)
+  sourceUrl    String   @map("source_url") @db.Text
+  license      String   @db.VarChar(160)
+  version      String   @db.VarChar(100)
+  publishedAt  DateTime @map("published_at") @db.Timestamptz(3)
+  validFrom    String   @map("valid_from") @db.VarChar(10)
+  validUntil   String   @map("valid_until") @db.VarChar(10)
+  status       String   @db.VarChar(20)
+  observations Json
+  checksum     String   @db.VarChar(160)
+  supersedesId String?  @map("supersedes_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@unique([metric, version])
+  @@index([metric, status, publishedAt(sort: Desc)])
+  @@map("macro_snapshots")
+}

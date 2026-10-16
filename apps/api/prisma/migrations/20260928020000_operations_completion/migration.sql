@@ -1,0 +1,12 @@
+ALTER TABLE "briefings" ADD COLUMN "confidence" INTEGER NOT NULL DEFAULT 80;
+ALTER TABLE "talent_categories" ADD COLUMN "owner" VARCHAR(120) NOT NULL DEFAULT '未分配';
+ALTER TABLE "talents" ADD COLUMN "level" VARCHAR(100) NOT NULL DEFAULT '';
+ALTER TABLE "leads" ADD COLUMN "source" VARCHAR(120) NOT NULL DEFAULT '手动录入', ADD COLUMN "last_touched_at" VARCHAR(10);
+ALTER TABLE "outreach_campaigns" ADD COLUMN "target_count" INTEGER NOT NULL DEFAULT 0;
+UPDATE "outreach_campaigns" SET "target_count" = "touched";
+ALTER TABLE "research_tasks" ADD COLUMN "deadline" VARCHAR(10), ADD COLUMN "result" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "leads" ADD CONSTRAINT "leads_score_range" CHECK ("score" BETWEEN 0 AND 100);
+ALTER TABLE "research_tasks" ADD CONSTRAINT "research_progress_range" CHECK ("progress" BETWEEN 0 AND 100);
+ALTER TABLE "outreach_campaigns" ADD CONSTRAINT "outreach_counts" CHECK ("replies" >= 0 AND "touched" >= "replies");
+ALTER TABLE "outreach_campaigns" ADD CONSTRAINT "outreach_target_count" CHECK ("target_count" >= "touched");
+ALTER TABLE "mapping_items" ADD CONSTRAINT "mapping_confidence_range" CHECK ("confidence" BETWEEN 0 AND 100);

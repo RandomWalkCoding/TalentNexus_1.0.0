@@ -1,0 +1,35 @@
+{
+  "name": "@hr-console/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:browser": "node scripts/stage03-smoke.mjs",
+    "test:browser:stage09": "node scripts/stage09-smoke.mjs",
+    "build": "tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "@hr-console/contracts": "workspace:*",
+    "@tanstack/react-query": "^5.90.7",
+    "lucide-react": "^1.48.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.5",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.0.4",
+    "jsdom": "^27.0.1",
+    "vite": "^7.1.12",
+    "vitest": "^4.0.8"
+  }
+}

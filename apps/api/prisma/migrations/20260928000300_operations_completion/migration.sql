@@ -1,0 +1,3 @@
+-- This migration directory was previously committed without its SQL payload.
+-- Keep it as a no-op so Prisma can apply the complete operations migrations
+-- that follow it in chronological order.

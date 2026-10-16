@@ -1,0 +1,43 @@
+.admin-tabs { display:flex; gap:20px; border-bottom:1px solid var(--border); margin-bottom:20px; overflow-x:auto; }
+.admin-tabs button { flex-shrink:0; display:flex; align-items:center; gap:7px; padding:12px 2px; border:0; border-bottom:2px solid transparent; color:var(--muted); background:transparent; font-size:12px; }
+.admin-tabs button[aria-selected=true] { color:var(--accent); border-bottom-color:var(--accent); }
+.admin-toolbar,.admin-pagination { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:16px 0; }
+.admin-page input,.admin-page select,.preferences-page select { max-width:100%; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:4px; color:var(--text); background:var(--surface); font:inherit; font-size:12px; }
+.admin-page button:disabled,.preferences-page button:disabled { opacity:.5; cursor:default; }
+.admin-action { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 12px; border:1px solid var(--border); border-radius:4px; color:var(--text); background:var(--surface); font-size:12px; }
+.admin-action:hover { border-color:var(--accent); }
+.admin-table-wrap { width:100%; overflow-x:auto; border-top:1px solid var(--border); }
+.admin-table { width:100%; border-collapse:collapse; font-size:12px; text-align:left; }
+.admin-table th { color:var(--muted); font-weight:500; background:var(--surface); }
+.admin-table th,.admin-table td { padding:13px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.admin-table td { min-width:100px; max-width:300px; overflow-wrap:anywhere; }
+.admin-table td small { display:block; margin-top:5px; color:var(--muted); }
+.admin-table td:last-child { white-space:nowrap; }
+.admin-table .icon-button { display:inline-grid; }
+.admin-status { display:inline-flex; align-items:center; gap:6px; }
+.admin-status::before { content:""; width:6px; height:6px; border-radius:50%; background:#e2aa56; }
+.admin-status.active::before { background:#48b798; }
+.admin-form { display:flex; flex-wrap:wrap; align-items:end; gap:14px; padding:18px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+.admin-form h2 { flex-basis:100%; margin:0; font-size:15px; }
+.admin-form label { display:grid; gap:7px; font-size:12px; }
+.admin-form input { width:210px; }
+.admin-pagination { justify-content:flex-end; color:var(--muted); font-size:12px; }
+.admin-feedback { padding:12px 0; font-size:12px; color:var(--accent); }
+.admin-feedback[role=alert] { color:#e99d93; }
+.admin-empty { padding:65px 12px; text-align:center; color:var(--muted); font-size:13px; }
+.admin-permissions { display:flex; flex-wrap:wrap; gap:6px; white-space:normal; }
+.admin-permissions span { padding:4px 6px; color:var(--muted); background:var(--hover); font-family:monospace; font-size:11px; }
+.preferences-page .settings-section { max-width:850px; margin-bottom:25px; }
+.preferences-page .setting-row { gap:16px; }
+.storage-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.storage-heading p { margin:7px 0 0; color:var(--muted); font-size:12px; }
+.storage-status { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:12px; white-space:nowrap; }
+.storage-status.connected { color:#48b798; }
+.storage-provider { display:flex; align-items:center; gap:12px; margin:18px 0 14px; padding:14px; border:1px solid var(--border); background:var(--surface); }
+.storage-provider svg { color:var(--accent); }
+.storage-provider div { display:grid; gap:4px; }
+.storage-provider span { color:var(--muted); font-size:11px; }
+.storage-scopes { display:flex; flex-wrap:wrap; gap:6px; }
+.storage-scopes span { padding:4px 7px; color:var(--muted); background:var(--hover); font-size:11px; }
+select:focus-visible,summary:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+@media(max-width:700px) { .admin-tabs { gap:14px; }.admin-toolbar input { flex:1; width:100%; }.admin-form label { width:100%; }.admin-form input { width:100%; }.preferences-page .setting-row { align-items:flex-start; flex-wrap:wrap; }.admin-pagination { justify-content:flex-start; } }

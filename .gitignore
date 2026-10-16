@@ -1,0 +1,14 @@
+node_modules/
+apps/api/generated/
+apps/api/src/generated/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+.playwright-cli/
+output/playwright/
+apps/web/output/playwright/
+*.log

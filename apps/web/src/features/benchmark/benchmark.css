@@ -1,0 +1,51 @@
+.benchmark-page { display: grid; gap: 16px; min-width: 0; }
+.benchmark-nav, .benchmark-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.benchmark-nav a, .benchmark-page button { border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--accent); padding: 9px 12px; font-size: 12px; }
+.benchmark-page button:disabled { opacity: .5; cursor: default; }
+.benchmark-filters { display: flex; flex-wrap: wrap; gap: 12px; }
+.benchmark-filters > label { flex: 1 1 140px; min-width: 0; }
+.benchmark-page label { display: grid; gap: 7px; margin: 9px 0; font-size: 12px; color: var(--muted); }
+.benchmark-page input, .benchmark-page select, .benchmark-page textarea { width: 100%; min-height: 36px; padding: 8px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font: inherit; }
+.benchmark-page textarea { resize: vertical; min-height: 70px; }
+.benchmark-page select:focus-visible, .benchmark-page textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.benchmark-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.benchmark-card { min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 20px; }
+.benchmark-card h2 { font-size: 20px; margin: 9px 0; }
+.benchmark-card h3 { font-size: 13px; }
+.benchmark-card p, .benchmark-card summary { font-size: 12px; line-height: 1.7; }
+.benchmark-card p { color: var(--muted); }
+.benchmark-card a { color: var(--accent); font-size: 12px; text-decoration: underline; }
+.benchmark-card details { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+.benchmark-card summary { cursor: pointer; }
+.benchmark-metrics, .benchmark-percentiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+.benchmark-percentiles { grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--border); padding-top: 15px; }
+.benchmark-metrics small, .benchmark-percentiles small { display: block; color: var(--muted); font-size: 10px; margin-bottom: 7px; }
+.benchmark-metrics strong { font-size: 17px; }
+.benchmark-percentiles strong { font-size: 12px; }
+.benchmark-bars { display: grid; gap: 12px; min-height: 190px; }
+.benchmark-bars > div { display: grid; grid-template-columns: 100px minmax(40px, 1fr) minmax(130px, 1fr); gap: 8px; align-items: center; font-size: 11px; }
+.benchmark-bars meter { width: 100%; accent-color: var(--accent); }
+.benchmark-warning, .benchmark-card .benchmark-warning { color: var(--accent); font-size: 12px; line-height: 1.8; }
+.benchmark-meta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; line-height: 1.8; }
+.benchmark-state { display: grid; justify-items: center; align-content: center; min-height: 130px; color: var(--muted); font-size: 13px; }
+.benchmark-table-wrap { overflow: auto; }
+.benchmark-page table { width: 100%; border-collapse: collapse; font-size: 11px; line-height: 1.8; }
+.benchmark-page th, .benchmark-page td { padding: 12px 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; min-width: 110px; }
+.benchmark-plan-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.benchmark-plan-inputs fieldset { border: 1px solid var(--border); border-radius: 5px; min-width: 0; }
+.benchmark-plan-inputs legend { font-size: 13px; color: var(--accent); }
+.benchmark-values { margin: 16px 0; }
+.benchmark-values > div { display: flex; justify-content: space-between; gap: 15px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.benchmark-values dt { color: var(--muted); }
+.benchmark-values dd { margin: 0; text-align: right; max-width: 60%; overflow-wrap: anywhere; }
+.benchmark-trend { color: var(--accent); min-height: 180px; }
+.benchmark-trend svg { width: 100%; height: 110px; }
+.benchmark-trend span { color: var(--muted); font-size: 11px; }
+@media (max-width: 1150px) { .benchmark-grid { grid-template-columns: 1fr; } }
+@media (max-width: 700px) {
+  .benchmark-plan-inputs { grid-template-columns: 1fr; }
+  .benchmark-card { padding: 14px; }
+  .benchmark-bars > div { grid-template-columns: 90px 1fr; }
+  .benchmark-bars > div > span:last-child { grid-column: 1 / -1; }
+  .benchmark-metrics, .benchmark-percentiles { grid-template-columns: 1fr; }
+}
